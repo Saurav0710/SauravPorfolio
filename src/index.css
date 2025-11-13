@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Animated stardust keyframes */
+@keyframes float1 {
+  0% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-100vh) translateX(30px);
+    opacity: 0;
+  }
+}
+
+@keyframes float2 {
+  0% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.8;
+  }
+
+  90% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translateY(-100vh) translateX(-40px);
+    opacity: 0;
+  }
+}
+
+@keyframes float3 {
+  0% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.9;
+  }
+
+  90% {
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translateY(-100vh) translateX(60px);
+    opacity: 0;
+  }
+}
+
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@layer components {
+  .video-card-gradient {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+  }
+
+  .film-strip {
+    background-image: repeating-linear-gradient(90deg,
+        transparent,
+        transparent 2px,
+        rgba(139, 92, 246, 0.1) 2px,
+        rgba(139, 92, 246, 0.1) 4px);
+  }
+
+  /* Animated stardust particles */
+  .stardust {
+    position: fixed;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 6px rgba(147, 197, 253, 0.8);
+  }
+
+  .stardust.size-1 {
+    width: 1px;
+    height: 1px;
+  }
+
+  .stardust.size-2 {
+    width: 2px;
+    height: 2px;
+  }
+
+  .stardust.size-3 {
+    width: 3px;
+    height: 3px;
+  }
+
+  /* Background animated logos - moving from bottom-right to top-left */
+  .bg-logos-animated {
+    pointer-events: none;
+    z-index: 1;
+    position: fixed;
+    inset: 0;
+  }
+
+  .bg-logo-float {
+    position: fixed;
+    animation-name: randomFloat;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-fill-mode: forwards;
+  }
+
+  .bg-logo-item {
+    opacity: 0.08;
+    filter: blur(1px) saturate(0.6) brightness(0.5);
+    mix-blend-mode: multiply;
+    display: block;
+    transform: rotate(-15deg);
+  }
+
+  /* Single random float animation that uses CSS variables */
+  @keyframes randomFloat {
+    0% {
+      transform: translate(0, 0) rotate(-15deg);
+      opacity: 0;
+    }
+
+    5% {
+      opacity: 0.08;
+    }
+
+    95% {
+      opacity: 0.08;
+    }
+
+    100% {
+      transform: translate(var(--end-x), var(--end-y)) rotate(-15deg);
+      opacity: 0;
+    }
+  }
+}
+
+@layer base {
+  h1 {
+    color: #ffffff;
+  }
+}
+
+:root {
+  --site-text: #ffffff;
+}
+
+/* Navy blue universe background with moving stardust */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, #050818 0%, #0f1b3a 20%, #0a1428 40%, #0f1b3a 60%, #051033 80%, #050818 100%);
+  background-attachment: fixed;
+  color: var(--site-text);
+  overflow-x: hidden;
+}
+
+/* Force a uniform text color across the app (overrides utility classes) */
+* {
+  color: var(--site-text) !important;
+}
