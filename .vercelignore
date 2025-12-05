@@ -1,0 +1,6 @@
+backend
+admin
+.git
+.env.local
+.env.*.local
+public/videos/
