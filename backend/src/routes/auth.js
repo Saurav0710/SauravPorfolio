@@ -11,7 +11,7 @@ const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2a$12$LQv3c1yqB
 // Login endpoint
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password } = req.body || {};
 
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
@@ -31,7 +31,7 @@ router.post('/login', async (req, res) => {
         // Create JWT token
         const token = jwt.sign(
             { email, role: 'admin' },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'fallback-secret',
             { expiresIn: '24h' }
         );
 
@@ -42,7 +42,7 @@ router.post('/login', async (req, res) => {
         });
     } catch (err) {
         console.error('Login error:', err);
-        res.status(500).json({ error: 'Login failed' });
+        res.status(500).json({ error: 'Login failed', details: err.message });
     }
 });
 
