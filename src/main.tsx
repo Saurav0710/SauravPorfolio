@@ -3,14 +3,23 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import ProjectPage from './pages/ProjectPage';
+import AdminLogin from './pages/AdminLogin';
 
 const root = createRoot(document.getElementById('root')!);
 
 function renderPage() {
   const pathname = window.location.pathname;
 
+  // match admin login page
+  if (pathname.startsWith('/admin/login')) {
+    root.render(
+      <StrictMode>
+        <AdminLogin />
+      </StrictMode>
+    );
+  }
   // match both `/projects` and `/projects/<key>`
-  if (pathname.startsWith('/projects')) {
+  else if (pathname.startsWith('/projects')) {
     root.render(
       <StrictMode>
         <ProjectPage />
