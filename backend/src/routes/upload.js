@@ -1,9 +1,18 @@
 const express = require('express');
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { verifyToken } = require('../middleware/auth');
+const pool = require('../lib/db');
 const router = express.Router();
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // Configure Cloudinary
 cloudinary.config({
@@ -12,8 +21,19 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Local storage for multer (fallback)
+const localStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
 // Setup Cloudinary storage for multer
-const storage = new CloudinaryStorage({
+const cloudinaryStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'saurav-portfolio/videos',
@@ -23,7 +43,7 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({
-    storage: storage,
+    storage: process.env.CLOUDINARY_CLOUD_NAME ? cloudinaryStorage : localStorage,
     limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit
     fileFilter: (req, file, cb) => {
         // Allow only video files
@@ -48,21 +68,37 @@ router.post('/', verifyToken, upload.single('video'), async (req, res) => {
             return res.status(400).json({ error: 'Title and category are required' });
         }
 
-        // Video uploaded to Cloudinary via multer
-        const videoUrl = req.file.path;
-        const publicId = req.file.filename;
+        // Get category ID from category key
+        const [categoryRows] = await pool.query(
+            'SELECT id FROM categories WHERE cat_key = ? LIMIT 1',
+            [category]
+        );
 
-        // TODO: Save metadata to database
-        // For now, return the upload response
+        if (!categoryRows || categoryRows.length === 0) {
+            return res.status(400).json({ error: 'Invalid category' });
+        }
+
+        const categoryId = categoryRows[0].id;
+
+        // Video uploaded to Cloudinary or local storage
+        const videoUrl = req.file.path; // Cloudinary URL or local path
+        const thumbUrl = req.file.path.replace(/\.[^/.]+$/, '.jpg'); // Placeholder thumbnail
+
+        // Save to database
+        await pool.query(
+            `INSERT INTO videos (category_id, source, video_identifier, title, description, thumb, order_index)
+             VALUES (?, 'local', ?, ?, ?, ?, 0)`,
+            [categoryId, videoUrl, title, description || null, thumbUrl]
+        );
+
         res.json({
-            message: 'Video uploaded successfully',
+            message: 'Video uploaded and saved successfully',
             video: {
                 title,
                 description,
                 category,
                 url: videoUrl,
-                publicId: publicId,
-                uploadedAt: new Date()
+                thumb: thumbUrl
             }
         });
     } catch (err) {

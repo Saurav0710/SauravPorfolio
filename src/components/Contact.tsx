@@ -2,8 +2,8 @@ import { Mail, Linkedin, Twitter, Github, Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 const socialLinks = [
-  { icon: Mail, label: 'Email', href: 'mailto:hello@sauravjadhav.com', color: 'hover:text-sky-300' },
-  { icon: Linkedin, label: 'LinkedIn', href: '#', color: 'hover:text-sky-300' },
+  { icon: Mail, label: 'Email', href: 'mailto:sauravjadhavedu@gmail.com', color: 'hover:text-sky-300' },
+  { icon: Linkedin, label: 'LinkedIn', href: 'www.linkedin.com/in/saurav-jadhav-643601220/', color: 'hover:text-sky-300' },
   { icon: Twitter, label: 'Twitter', href: '#', color: 'hover:text-sky-300' },
   { icon: Github, label: 'Github', href: '#', color: 'hover:text-sky-300' }
 ];
@@ -50,7 +50,7 @@ function Contact() {
 
           <div className="bg-gradient-to-br from-gray-900 to-slate-950 rounded-xl p-12 border-3 border-slate-700/50 shadow-2xl shadow-slate-800/20">
             {/* Corner accents */}
-            <div className="absolute -top-4 -left-4 w-8 h-8 bg-slate-700"></div>
+           
             <div className="absolute -top-4 -right-4 w-8 h-8 bg-white/8"></div>
             <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-white/8"></div>
             <div className="absolute -bottom-4 -right-4 w-8 h-8 bg-slate-700"></div>
@@ -83,10 +83,10 @@ function Contact() {
 
             <div className="text-center border-t-2 border-slate-700/30 pt-8">
               <p className="text-gray-400 text-sm uppercase tracking-widest font-bold">
-                © 2024 Saurav Jadhav • Professional Video Editing & Production
+                © 2026 Saurav Jadhav • Professional Video Editing & Production
               </p>
               <p className="text-gray-500 text-xs mt-2 tracking-wider">
-                Crafted with precision and creative vision
+                
               </p>
             </div>
           </div>

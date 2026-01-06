@@ -1,5 +1,25 @@
 import { useRef, useState, useEffect } from 'react';
-import { categories } from '../data/projectsData';
+
+interface Category {
+  id: number;
+  cat_key: string;
+  title: string;
+  subtitle?: string;
+  cover?: string;
+}
+
+interface Video {
+  id: number;
+  category_id: number;
+  source: string;
+  video_identifier: string;
+  title: string;
+  description?: string;
+  thumb?: string;
+  order_index?: number;
+  cat_key?: string;
+  category_title?: string;
+}
 
 function parseCategoryFromPath(path: string) {
   const parts = path.split('/').filter(Boolean);
@@ -8,17 +28,41 @@ function parseCategoryFromPath(path: string) {
   return null;
 }
 
+function getDriveEmbedUrl(driveUrl: string) {
+  // Convert Google Drive sharing link to embed URL
+  // From: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+  // To: https://drive.google.com/file/d/FILE_ID/preview
+  const match = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) {
+    return `https://drive.google.com/file/d/${match[1]}/preview`;
+  }
+  return driveUrl; // fallback to original URL
+}
+
+function getDriveDirectUrl(driveUrl: string) {
+  // For direct playback, use the preview URL which allows video playback
+  const match = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) {
+    return `https://drive.google.com/file/d/${match[1]}/preview`;
+  }
+  return driveUrl;
+}
+
 function goHome() {
   // Change URL first
   window.history.pushState({}, '', '/');
-  
+
   // Trigger a custom event to notify the app to navigate
   window.dispatchEvent(new CustomEvent('navigate-home'));
 }
 
 export default function ProjectPage() {
   const [categoryKey, setCategoryKey] = useState<string | null>(null);
+  const [category, setCategory] = useState<Category | null>(null);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
@@ -29,17 +73,46 @@ export default function ProjectPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const vid = urlParams.get('video');
     setSelectedVideoId(vid);
+
+    if (key) {
+      fetchCategoryAndVideos(key);
+    }
   }, []);
 
-  const category = categoryKey ? categories.find((c) => c.key === categoryKey) : null;
-  
-  // Only show items from the current category
-  const categoryItems = category?.items.map((it) => ({ ...it, categoryKey: category.key, categoryTitle: category.title })) || [];
-  
-  const selectedVideo = categoryItems.find((i) => i.id === selectedVideoId) || categoryItems[0] || null;
+  const fetchCategoryAndVideos = async (key: string) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Fetch category
+      const categoryRes = await fetch(`${import.meta.env.VITE_API_URL}/api/categories/${key}`);
+      if (!categoryRes.ok) throw new Error('Category not found');
+      const categoryData = await categoryRes.json();
+      setCategory(categoryData.category);
+
+      // Fetch videos
+      const videosRes = await fetch(`${import.meta.env.VITE_API_URL}/api/videos`);
+      if (!videosRes.ok) throw new Error('Failed to fetch videos');
+      const videosData = await videosRes.json();
+      const categoryVideos = videosData.videos.filter((v: Video) => v.cat_key === key);
+      setVideos(categoryVideos);
+
+      // Set first video as selected if none selected
+      if (!selectedVideoId && categoryVideos.length > 0) {
+        setSelectedVideoId(categoryVideos[0].id.toString());
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load content');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedVideo = videos.find((v) => v.id.toString() === selectedVideoId) || videos[0] || null;
 
   const playFullscreen = async () => {
     if (!selectedVideo) return;
+    
     if (selectedVideo.source === 'local') {
       const v = videoRef.current;
       if (!v) return;
@@ -47,14 +120,28 @@ export default function ProjectPage() {
         v.muted = false;
         await v.play();
         if (v.requestFullscreen) await v.requestFullscreen();
-      } catch {}
-    } else {
+      } catch (error) {
+        console.error('Error playing local video:', error);
+      }
+    } else if (selectedVideo.source === 'youtube') {
       const iframe = iframeRef.current;
       if (!iframe) return;
       try {
-        iframe.src = `https://www.youtube.com/embed/${selectedVideo.videoUrl}?autoplay=1&rel=0`;
+        iframe.src = `https://www.youtube.com/embed/${selectedVideo.video_identifier}?autoplay=1&rel=0`;
         if ((iframe as any).requestFullscreen) await (iframe as any).requestFullscreen();
       } catch {}
+    } else if (selectedVideo.source === 'drive') {
+      // For drive videos, update the iframe to show the preview and go fullscreen
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+      try {
+        iframe.src = getDriveDirectUrl(selectedVideo.video_identifier);
+        if ((iframe as any).requestFullscreen) await (iframe as any).requestFullscreen();
+      } catch (error) {
+        console.error('Error playing drive video:', error);
+        // Fallback: open in new tab
+        window.open(getDriveDirectUrl(selectedVideo.video_identifier), '_blank');
+      }
     }
   };
 
@@ -73,16 +160,29 @@ export default function ProjectPage() {
       if (!v) return;
       try {
         v.pause();
-        v.src = selectedVideo.videoUrl;
+        v.src = selectedVideo.video_identifier.startsWith('/uploads') ? 
+                `${import.meta.env.VITE_API_URL}${selectedVideo.video_identifier}` : 
+                selectedVideo.video_identifier;
         v.muted = true;
         v.loop = true;
         v.play().catch(() => {});
       } catch {}
       if (iframeRef.current) iframeRef.current.src = '';
-    } else {
+    } else if (selectedVideo.source === 'youtube') {
       // youtube preview: autoplay muted in embed
       if (iframeRef.current) {
-        iframeRef.current.src = `https://www.youtube.com/embed/${selectedVideo.videoUrl}?autoplay=1&mute=1&loop=1&playlist=${selectedVideo.videoUrl}&controls=0&rel=0`;
+        iframeRef.current.src = `https://www.youtube.com/embed/${selectedVideo.video_identifier}?autoplay=1&mute=1&loop=1&playlist=${selectedVideo.video_identifier}&controls=0&rel=0`;
+      }
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+          videoRef.current.src = '';
+        } catch {}
+      }
+    } else if (selectedVideo.source === 'drive') {
+      // For drive videos, show the preview iframe
+      if (iframeRef.current) {
+        iframeRef.current.src = getDriveDirectUrl(selectedVideo.video_identifier);
       }
       if (videoRef.current) {
         try {
@@ -106,11 +206,45 @@ export default function ProjectPage() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white bg-black">
+        <div className="text-center">
+          <div className="text-gray-400">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white bg-black">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-red-400">Error</h2>
+          <p className="mt-2">{error}</p>
+          <button onClick={goHome} className="mt-4 px-6 py-2 bg-sky-600 rounded-lg">Go Home</button>
+        </div>
+      </div>
+    );
+  }
+
   if (!category) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white bg-black">
         <div className="text-center">
           <p>Unknown category: {categoryKey}</p>
+          <button onClick={goHome} className="mt-4 px-6 py-2 bg-sky-600 rounded-lg">Go Home</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (videos.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white bg-black">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold">{category.title}</h2>
+          <p className="mt-2">No videos in this category yet.</p>
           <button onClick={goHome} className="mt-4 px-6 py-2 bg-sky-600 rounded-lg">Go Home</button>
         </div>
       </div>
@@ -132,18 +266,31 @@ export default function ProjectPage() {
             muted 
             loop 
             autoPlay
+            src={selectedVideo?.video_identifier.startsWith('/uploads') ? 
+                 `${import.meta.env.VITE_API_URL}${selectedVideo.video_identifier}` : 
+                 selectedVideo.video_identifier}
           />
-        ) : (
+        ) : selectedVideo?.source === 'youtube' ? (
           <iframe 
             ref={iframeRef} 
             title={selectedVideo?.title} 
             className="w-full h-full"
-            src={selectedVideo ? `https://www.youtube.com/embed/${selectedVideo.videoUrl}?autoplay=1&mute=1&loop=1&playlist=${selectedVideo.videoUrl}&controls=0&rel=0` : ''} 
+            src={selectedVideo ? `https://www.youtube.com/embed/${selectedVideo.video_identifier}?autoplay=1&mute=1&loop=1&playlist=${selectedVideo.video_identifier}&controls=0&rel=0` : ''} 
             frameBorder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowFullScreen 
           />
-        )}
+        ) : selectedVideo?.source === 'drive' ? (
+          <iframe 
+            ref={iframeRef} 
+            title={selectedVideo?.title} 
+            className="w-full h-full"
+            src={selectedVideo ? getDriveDirectUrl(selectedVideo.video_identifier) : ''} 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen 
+          />
+        ) : null}
       </div>
 
       {/* Content Overlay */}
@@ -173,6 +320,7 @@ export default function ProjectPage() {
             {/* Play Button */}
             <div className="flex items-center gap-4 mb-8">
               <button 
+                type="button"
                 onClick={playFullscreen} 
                 className="px-8 py-4 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-500 text-white rounded-lg font-bold text-lg hover:from-blue-800 hover:via-blue-600 hover:to-blue-400 transition-all flex items-center gap-3 shadow-lg"
               >
@@ -182,6 +330,7 @@ export default function ProjectPage() {
                 Play
               </button>
               <button 
+                type="button"
                 className="px-6 py-4 bg-gray-600/80 text-white rounded-lg font-bold text-lg hover:bg-gray-600 transition-all shadow-lg"
               >
                 More Info
@@ -192,7 +341,11 @@ export default function ProjectPage() {
             <div className="flex items-center gap-4 text-sm text-gray-300 mb-2">
               <span className="font-semibold">{category.title}</span>
               <span>•</span>
-              <span>{selectedVideo?.source === 'local' ? 'Local Video' : 'YouTube'}</span>
+              <span>
+                {selectedVideo?.source === 'local' ? 'Local Video' : 
+                 selectedVideo?.source === 'youtube' ? 'YouTube' : 
+                 selectedVideo?.source === 'drive' ? 'Drive Link' : 'Video'}
+              </span>
             </div>
           </div>
 
@@ -200,10 +353,10 @@ export default function ProjectPage() {
           <div className="mt-12">
             <h2 className="text-2xl font-bold mb-4">{category.title} Collection</h2>
             <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-              {categoryItems.map((item) => (
+              {videos.map((item) => (
                 <button 
                   key={item.id} 
-                  onClick={() => openVideo(item.id)} 
+                  onClick={() => openVideo(item.id.toString())} 
                   className={`flex-shrink-0 w-80 rounded-lg overflow-hidden transition-all hover:scale-105 hover:ring-2 hover:ring-white ${
                     selectedVideo?.id === item.id ? 'ring-2 ring-sky-400' : ''
                   }`}
@@ -211,22 +364,47 @@ export default function ProjectPage() {
                   <div className="relative aspect-video bg-gray-800">
                     {item.source === 'local' ? (
                       <video 
-                        src={item.videoUrl} 
+                        src={item.video_identifier.startsWith('/uploads') ? 
+                             `${import.meta.env.VITE_API_URL}${item.video_identifier}` : 
+                             item.video_identifier}
                         className="w-full h-full object-cover" 
                         muted 
                       />
-                    ) : (
+                    ) : item.source === 'youtube' ? (
                       <img 
-                        src={`https://img.youtube.com/vi/${item.videoUrl}/maxresdefault.jpg`} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover" 
+                        src={`https://img.youtube.com/vi/${item.video_identifier}/maxresdefault.jpg`}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
                       />
+                    ) : item.source === 'drive' ? (
+                      item.thumb ? (
+                        <img 
+                          src={item.thumb.startsWith('http') ? 
+                               item.thumb : 
+                               (item.thumb.startsWith('/uploads') ? 
+                                `${import.meta.env.VITE_API_URL}${item.thumb}` : 
+                                item.thumb)}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-700 text-white text-sm">
+                          <div className="text-center">
+                            <div className="text-2xl mb-1">📁</div>
+                            <div className="text-xs">Drive</div>
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        {item.title}
+                      </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <h3 className="text-white font-bold text-lg">{item.title}</h3>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <h3 className="text-white font-semibold text-sm line-clamp-2">{item.title}</h3>
                       {item.description && (
-                        <p className="text-gray-300 text-sm mt-1 line-clamp-2">{item.description}</p>
+                        <p className="text-gray-300 text-xs mt-1 line-clamp-1">{item.description}</p>
                       )}
                     </div>
                   </div>

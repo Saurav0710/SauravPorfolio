@@ -1,55 +1,124 @@
 const express = require('express');
 const router = express.Router();
-
-// Mock categories
-const mockCategories = [
-    {
-        id: '1',
-        key: 'youtube',
-        title: 'YouTube Videos',
-        subtitle: 'Professional video editing showcases',
-        isActive: true
-    },
-    {
-        id: '2',
-        key: 'genai',
-        title: 'GenAI Ads',
-        subtitle: 'AI-generated advertisement samples',
-        isActive: true
-    },
-    {
-        id: '3',
-        key: 'brand',
-        title: 'Brand Films',
-        subtitle: 'High-end brand films and showcases',
-        isActive: true
-    }
-];
+const pool = require('../lib/db');
+const { verifyToken } = require('../middleware/auth');
 
 // Get all categories
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        res.json({
-            message: 'Categories fetched successfully',
-            categories: mockCategories
-        });
+        const [rows] = await pool.query(
+            'SELECT id, cat_key, title, subtitle, cover, created_at FROM categories ORDER BY id DESC'
+        );
+        res.json({ categories: rows });
     } catch (err) {
         console.error('Fetch categories error:', err);
         res.status(500).json({ error: 'Failed to fetch categories' });
     }
 });
 
-// Get single category
-router.get('/:key', (req, res) => {
+// Get single category by key
+router.get('/:key', async (req, res) => {
     try {
-        const category = mockCategories.find(c => c.key === req.params.key);
-        if (!category) {
+        const [rows] = await pool.query(
+            'SELECT id, cat_key, title, subtitle, cover, created_at FROM categories WHERE cat_key = ? LIMIT 1',
+            [req.params.key]
+        );
+
+        if (!rows || rows.length === 0) {
             return res.status(404).json({ error: 'Category not found' });
         }
-        res.json({ category });
+
+        res.json({ category: rows[0] });
     } catch (err) {
         console.error('Fetch category error:', err);
         res.status(500).json({ error: 'Failed to fetch category' });
+    }
+});
+
+// Create category (admin only)
+router.post('/', verifyToken, async (req, res) => {
+    try {
+        const { cat_key, title, subtitle, cover } = req.body || {};
+
+        if (!cat_key || !title) {
+            return res.status(400).json({ error: 'cat_key and title are required' });
+        }
+
+        await pool.query(
+            'INSERT INTO categories (cat_key, title, subtitle, cover) VALUES (?, ?, ?, ?)',
+            [cat_key, title, subtitle || null, cover || null]
+        );
+
+        const [rows] = await pool.query(
+            'SELECT id, cat_key, title, subtitle, cover, created_at FROM categories WHERE cat_key = ? LIMIT 1',
+            [cat_key]
+        );
+
+        res.json({ category: rows[0] });
+    } catch (err) {
+        console.error('Create category error:', err);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'Category key already exists' });
+        }
+        res.status(500).json({ error: 'Failed to create category' });
+    }
+});
+
+// Update category
+router.put('/:id', verifyToken, async (req, res) => {
+    try {
+        const { cat_key, title, subtitle, cover } = req.body || {};
+
+        if (!cat_key || !title) {
+            return res.status(400).json({ error: 'cat_key and title are required' });
+        }
+
+        const [existing] = await pool.query(
+            'SELECT id FROM categories WHERE id = ? LIMIT 1',
+            [req.params.id]
+        );
+
+        if (!existing || existing.length === 0) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        await pool.query(
+            'UPDATE categories SET cat_key = ?, title = ?, subtitle = ?, cover = ? WHERE id = ?',
+            [cat_key, title, subtitle || null, cover || null, req.params.id]
+        );
+
+        const [rows] = await pool.query(
+            'SELECT id, cat_key, title, subtitle, cover, created_at FROM categories WHERE id = ? LIMIT 1',
+            [req.params.id]
+        );
+
+        res.json({ category: rows[0] });
+    } catch (err) {
+        console.error('Update category error:', err);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'Category key already exists' });
+        }
+        res.status(500).json({ error: 'Failed to update category' });
+    }
+});
+
+// Delete category
+router.delete('/:id', verifyToken, async (req, res) => {
+    try {
+        const [existing] = await pool.query(
+            'SELECT id FROM categories WHERE id = ? LIMIT 1',
+            [req.params.id]
+        );
+
+        if (!existing || existing.length === 0) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        await pool.query('DELETE FROM categories WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Category deleted successfully' });
+    } catch (err) {
+        console.error('Delete category error:', err);
+        res.status(500).json({ error: 'Failed to delete category' });
     }
 });
 

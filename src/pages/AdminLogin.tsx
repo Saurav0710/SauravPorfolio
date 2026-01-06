@@ -30,7 +30,7 @@ export default function AdminLogin() {
             const data = await response.json();
             localStorage.setItem('adminToken', data.token);
             setTimeout(() => {
-                window.location.href = '/admin/upload';
+                window.location.href = '/admin/videos';
             }, 500);
         } catch (err) {
             const error = err as LoginError;
