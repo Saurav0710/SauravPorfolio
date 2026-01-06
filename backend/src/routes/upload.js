@@ -69,16 +69,16 @@ router.post('/', verifyToken, upload.single('video'), async (req, res) => {
         }
 
         // Get category ID from category key
-        const [categoryRows] = await pool.query(
-            'SELECT id FROM categories WHERE cat_key = ? LIMIT 1',
+        const categoryResult = await pool.query(
+            'SELECT id FROM categories WHERE cat_key = $1 LIMIT 1',
             [category]
         );
 
-        if (!categoryRows || categoryRows.length === 0) {
+        if (!categoryResult.rows || categoryResult.rows.length === 0) {
             return res.status(400).json({ error: 'Invalid category' });
         }
 
-        const categoryId = categoryRows[0].id;
+        const categoryId = categoryResult.rows[0].id;
 
         // Video uploaded to Cloudinary or local storage
         const videoUrl = req.file.path; // Cloudinary URL or local path
@@ -87,7 +87,7 @@ router.post('/', verifyToken, upload.single('video'), async (req, res) => {
         // Save to database
         await pool.query(
             `INSERT INTO videos (category_id, source, video_identifier, title, description, thumb, order_index)
-             VALUES (?, 'local', ?, ?, ?, ?, 0)`,
+             VALUES ($1, 'local', $2, $3, $4, $5, 0)`,
             [categoryId, videoUrl, title, description || null, thumbUrl]
         );
 

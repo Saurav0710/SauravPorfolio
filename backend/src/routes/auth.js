@@ -16,16 +16,16 @@ router.post('/login', async (req, res) => {
 
         try {
             // Query database for admin
-            const [rows] = await pool.query(
-                'SELECT * FROM admins WHERE email = ? AND is_active = 1',
+            const result = await pool.query(
+                'SELECT * FROM admins WHERE email = $1 AND is_active = true',
                 [email]
             );
 
-            if (!rows || rows.length === 0) {
+            if (!result.rows || result.rows.length === 0) {
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
 
-            const admin = rows[0];
+            const admin = result.rows[0];
 
             // Compare password
             const validPassword = await bcrypt.compare(password, admin.password_hash);
@@ -48,8 +48,8 @@ router.post('/login', async (req, res) => {
         } catch (dbError) {
             console.log('Database not available, falling back to hardcoded admin');
             // Fallback to hardcoded admin
-            const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@sauravjadhav.com';
-            const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5YmMxSUmGEJaq';
+            const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
+            const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2a$10$x4hGmWQsZDKFnINhhcx65eO1rdtSjS51HngGxxmmgxa.nxbkz6wye';
 
             if (email !== ADMIN_EMAIL) {
                 return res.status(401).json({ error: 'Invalid credentials' });
