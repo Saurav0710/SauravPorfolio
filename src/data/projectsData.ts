@@ -1,4 +1,4 @@
-export type Source = 'local' | 'youtube';
+export type Source = 'local' | 'youtube' | 'drive';
 
 export interface VideoItem {
   id: string;
@@ -20,29 +20,32 @@ export interface Category {
 export const categories: Category[] = [
   {
     key: 'youtube',
-    title: 'YouTube Videos',
-    subtitle: 'Professional video editing showcasing advanced color grading and motion graphics',
-    cover: 'https://img.youtube.com/vi/Qr0upTwWZ1I/maxresdefault.jpg',
+    title: 'Social Media',
+    subtitle: 'AI-enhanced social media videos for maximum engagement',
+    cover: '/images/Social/5OhMb6mWuns-HD.jpg',
     items: [
-      { id: 'yt1', title: 'Professional Video Edit Showcase #1', description: 'Professional video editing showcasing advanced color grading, motion graphics, and cinematic transitions', source: 'youtube', videoUrl: 'Qr0upTwWZ1I' },
-      { id: 'yt2', title: 'Premium Content Creation', description: 'High-quality content creation with professional editing, audio mixing, and visual effects', source: 'youtube', videoUrl: 'TyuP7_B2URo' },
-      { id: 'yt3', title: 'YouTube Short #1 - Quick Edit', description: 'Professional short-form video with quick cuts, effects, and engaging transitions', source: 'youtube', videoUrl: 'KWIFZqyoBNA' },
-      { id: 'yt4', title: 'YouTube Short #2 - Dynamic Content', description: 'Trending short-form content with professional editing and visual effects', source: 'youtube', videoUrl: 'sfHTCvVoD7M' },
-      { id: 'yt5', title: 'Full Length Professional Video', description: 'Complete production video featuring professional editing, color grading, and sound design', source: 'youtube', videoUrl: '5OhMb6mWuns' },
+      
+      
+      { id: 'yt1', title: 'Utec YT Short Video', description: '', source: 'youtube', videoUrl: 'sfHTCvVoD7M' },
+      { id: 'yt2', title: 'Utec Long Video', description: '', source: 'youtube', videoUrl: '5OhMb6mWuns' },
+      { id: 'yt3', title: 'Visit Health YT Short', description: '', source: 'youtube', videoUrl: 'https://youtube.com/shorts/qscKi-ymS5A?si=_E4esV3dJpybO16e' },
     ],
   },
   {
     key: 'genai',
     title: 'GenAI Ads',
-    subtitle: 'Professional AI-generated content showcasing cutting-edge generative technology',
-    cover: '/videos/genai/genai.mp4',
+    subtitle: 'AI-generated content showcasing cutting-edge generative technology',
+    cover: '/images/GenAI/Samsung_SS_switch.png',
     items: [
-      { id: 'g1', title: 'GenAI Creative Sample', description: 'Professional AI-generated content showcasing cutting-edge generative technology', source: 'local', videoUrl: '/videos/genai/genai.mp4' },
-      { id: 'g2', title: 'JSW GenAI Sample', description: 'JSW GenAI-powered commercial with advanced visual effects and color grading', source: 'local', videoUrl: '/videos/genai/JSW_GenAI_Sample.mp4' },
-      { id: 'g3', title: 'Nescafe 4K GenAI', description: 'Nescafe brand commercial created with AI generation technology in 4K resolution', source: 'local', videoUrl: '/videos/genai/Nescafe_4k.mp4' },
-      { id: 'g4', title: 'Sunscreen SBV GenAI', description: 'Sunscreen product ad with AI-generated visuals and professional editing', source: 'local', videoUrl: '/videos/genai/Sunscreen_SBV_10.mp4' },
-      { id: 'g5', title: 'Tata Motors GenAI', description: 'Tata Motors commercial featuring AI-generated automotive visuals and effects', source: 'local', videoUrl: '/videos/genai/Tata Motors Sample.mp4' },
-    ],
+      
+      { id: 'g2', title: 'Samsung AI Commercial', description: 'Leading electronics company', source: 'drive', videoUrl: 'https://drive.google.com/file/d/1UE39NOVMr9W4ksjjCEgu0fmF9eie62mb/view?usp=sharing', thumb: '/images/GenAI/Samsung_thumbnail.png' },
+      { id: 'g3', title: 'JSW Steel Sample', description: 'Leading steel manufacturing company', source: 'drive', videoUrl: 'https://drive.google.com/file/d/1MdsTWRkoemboVZ0EML9eW7DqPBthzvL9/view?usp=sharing', thumb: '/images/GenAI/JSW.png' },
+      { id: 'g4', title: 'Nescafe', description: 'Leading bevarage global brand ', source: 'drive', videoUrl: 'https://drive.google.com/file/d/1KaODfbURTEb9FiCrcMut6U6Mg2vIm8T3/view?usp=sharing', thumb: '/images/GenAI/Nescafe_Thumb.png' },
+      { id: 'g5', title: 'Lacto Sunscreen', description: 'Leading sunscreen brand in India', source: 'drive', videoUrl: 'https://drive.google.com/file/d/1-fQv4ezQLVLKVeguCJjVLOnA_E-5biai/view?usp=sharing', thumb: '/images/GenAI/Sunscreen_thumb.png' },
+      { id: 'g6', title: 'Tata Motors Sample', description: 'Leading automotive company', source: 'drive', videoUrl: 'https://drive.google.com/file/d/17CpY0B0PrZR5r1mNVHKle5LDVdTENTyw/view?usp=sharing', thumb: '/images/GenAI/Tata Motors.png' },
+      { id: 'g7', title: 'Solar Square Sample', description: 'Leading rooftop solar company in India', source: 'drive', videoUrl:'https://drive.google.com/file/d/1DVTh--J_4en46H1F8KNwtF3n0iDwoUpn/view?usp=sharing' ,thumb:'/images/GenAI/Solar Square.png' },
+      
+  ],
   },
   {
     key: 'brand',
@@ -51,7 +54,7 @@ export const categories: Category[] = [
     cover: 'https://img.youtube.com/vi/Un123D2GxIU/maxresdefault.jpg',
     items: [
       { id: 'b1', title: 'Brand Film - Client Showcase', description: 'Brand film showcased on YouTube featuring professional production and cinematography', source: 'youtube', videoUrl: 'Un123D2GxIU' },
-      { id: 'b2', title: 'Vidboost Brand Film', description: 'Professional brand film with advanced visual effects and storytelling', source: 'local', videoUrl: '/videos/brandFlim/vidboost_web_8.mp4' },
+      
     ],
   },
 ];

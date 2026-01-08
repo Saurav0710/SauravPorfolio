@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { categories, Category as DataCategory, VideoItem } from '../data/projectsData';
 
 interface Category {
   id: number;
@@ -61,7 +62,7 @@ export default function ProjectPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -75,42 +76,52 @@ export default function ProjectPage() {
     setSelectedVideoId(vid);
 
     if (key) {
-      fetchCategoryAndVideos(key);
+      loadCategoryAndVideos(key);
     }
   }, []);
 
-  const fetchCategoryAndVideos = async (key: string) => {
-    try {
-      setLoading(true);
-      setError('');
+  const loadCategoryAndVideos = (key: string) => {
+    // Find the category from hardcoded data
+    const dataCategory = categories.find(cat => cat.key === key);
+    if (!dataCategory) {
+      setError('Category not found');
+      return;
+    }
 
-      // Fetch category
-      const categoryRes = await fetch(`${import.meta.env.VITE_API_URL}/api/categories/${key}`);
-      if (!categoryRes.ok) throw new Error('Category not found');
-      const categoryData = await categoryRes.json();
-      setCategory(categoryData.category);
+    // Map category
+    const mappedCategory: Category = {
+      id: categories.indexOf(dataCategory) + 1,
+      cat_key: dataCategory.key,
+      title: dataCategory.title,
+      subtitle: dataCategory.subtitle,
+      cover: dataCategory.cover,
+    };
+    setCategory(mappedCategory);
 
-      // Fetch videos
-      const videosRes = await fetch(`${import.meta.env.VITE_API_URL}/api/videos`);
-      if (!videosRes.ok) throw new Error('Failed to fetch videos');
-      const videosData = await videosRes.json();
-      const categoryVideos = videosData.videos.filter((v: Video) => v.cat_key === key);
-      setVideos(categoryVideos);
+    // Map videos
+    const mappedVideos: Video[] = dataCategory.items.map((item, index) => ({
+      id: index + 1,
+      category_id: mappedCategory.id,
+      source: item.source,
+      video_identifier: item.source === 'youtube' ? item.videoUrl : item.videoUrl,
+      title: item.title,
+      description: item.description,
+      thumb: item.thumb,
+      order_index: index,
+      cat_key: key,
+      category_title: dataCategory.title,
+    }));
+    setVideos(mappedVideos);
 
-      // Set first video as selected if none selected
-      if (!selectedVideoId && categoryVideos.length > 0) {
-        setSelectedVideoId(categoryVideos[0].id.toString());
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load content');
-    } finally {
-      setLoading(false);
+    // Set first video as selected if none selected
+    if (!selectedVideoId && mappedVideos.length > 0) {
+      setSelectedVideoId(mappedVideos[0].id.toString());
     }
   };
 
   const selectedVideo = videos.find((v) => v.id.toString() === selectedVideoId) || videos[0] || null;
 
-  const playFullscreen = async () => {
+    const playFullscreen = async () => {
     if (!selectedVideo) return;
     
     if (selectedVideo.source === 'local') {
@@ -131,17 +142,12 @@ export default function ProjectPage() {
         if ((iframe as any).requestFullscreen) await (iframe as any).requestFullscreen();
       } catch {}
     } else if (selectedVideo.source === 'drive') {
-      // For drive videos, update the iframe to show the preview and go fullscreen
       const iframe = iframeRef.current;
       if (!iframe) return;
       try {
         iframe.src = getDriveDirectUrl(selectedVideo.video_identifier);
         if ((iframe as any).requestFullscreen) await (iframe as any).requestFullscreen();
-      } catch (error) {
-        console.error('Error playing drive video:', error);
-        // Fallback: open in new tab
-        window.open(getDriveDirectUrl(selectedVideo.video_identifier), '_blank');
-      }
+      } catch {}
     }
   };
 
@@ -261,7 +267,7 @@ export default function ProjectPage() {
         {selectedVideo?.source === 'local' ? (
           <video 
             ref={videoRef} 
-            className="w-full h-full object-contain" 
+            className="w-full h-full object-cover" 
             playsInline 
             muted 
             loop 
@@ -282,6 +288,7 @@ export default function ProjectPage() {
           />
         ) : selectedVideo?.source === 'drive' ? (
           <iframe 
+            key={selectedVideo.id}
             ref={iframeRef} 
             title={selectedVideo?.title} 
             className="w-full h-full"
@@ -361,7 +368,7 @@ export default function ProjectPage() {
                     selectedVideo?.id === item.id ? 'ring-2 ring-sky-400' : ''
                   }`}
                 >
-                  <div className="relative aspect-video bg-gray-800">
+                  <div className="relative aspect-video bg-black">
                     {item.source === 'local' ? (
                       <video 
                         src={item.video_identifier.startsWith('/uploads') ? 
@@ -385,7 +392,7 @@ export default function ProjectPage() {
                                 `${import.meta.env.VITE_API_URL}${item.thumb}` : 
                                 item.thumb)}
                           alt={item.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-700 text-white text-sm">

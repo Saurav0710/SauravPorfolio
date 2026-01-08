@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+﻿import { categories } from '../data/projectsData';
 
 interface Category {
   id: number;
@@ -10,54 +10,15 @@ interface Category {
 }
 
 export default function Projects() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`);
-      if (!response.ok) throw new Error('Failed to fetch categories');
-      const data = await response.json();
-      setCategories(data.categories || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load categories');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <section id="projects" className="py-20 px-6 md:px-12 lg:px-24 bg-transparent">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-5xl font-black mb-4">Projects</h2>
-          <p className="text-gray-300 mb-8">Browse all video work below.</p>
-          <div className="flex justify-center items-center h-64">
-            <div className="text-gray-400">Loading categories...</div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section id="projects" className="py-20 px-6 md:px-12 lg:px-24 bg-transparent">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-5xl font-black mb-4">Projects</h2>
-          <p className="text-gray-300 mb-8">Browse all video work below.</p>
-          <div className="flex justify-center items-center h-64">
-            <div className="text-red-400">Error: {error}</div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // Map the hardcoded categories to match the expected interface
+  const mappedCategories: Category[] = categories.map((cat, index) => ({
+    id: index + 1,
+    cat_key: cat.key,
+    title: cat.title,
+    subtitle: cat.subtitle,
+    cover: cat.cover,
+    created_at: new Date().toISOString(), // dummy date
+  }));
 
   return (
     <section id="projects" className="py-20 px-6 md:px-12 lg:px-24 bg-transparent">
@@ -67,7 +28,7 @@ export default function Projects() {
 
         <div className="overflow-x-auto no-scrollbar">
           <div className="flex gap-6 items-start py-2 px-2">
-            {categories.map((cat, idx) => {
+            {mappedCategories.map((cat, idx) => {
               // determine a suitable image to show for the category
               const cover = cat.cover;
               const isImage = cover && /\.(png|jpe?g|webp|gif)$/i.test(cover);
