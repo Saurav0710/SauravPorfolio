@@ -1,4 +1,33 @@
-logs
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+dist-ssr/
+build/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -6,23 +35,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Vite
+.vite/
 
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
+# Misc
+.bolt/
+.vercel/
+*.sln
+*.su?
 *.ntvs*
 *.njsproj
-
-# Large video files - use Git LFS or host separately
-public/videos/**/*.mp4
-public/videos/**/*.mov
-public/videos/**/*.webm
-*.sln
-*.sw?
-.env

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import sauravImg from '../assets/saurav.png';
+import sauravImg from '/images/GenAI/saurav.png';
 
 function About() {
   const [isVisible, setIsVisible] = useState(false);

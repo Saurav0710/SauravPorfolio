@@ -1,1 +1,0 @@
-ALTER TABLE videos MODIFY COLUMN source ENUM('local', 'youtube', 'drive') NOT NULL DEFAULT 'youtube';
