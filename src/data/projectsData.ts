@@ -28,7 +28,7 @@ export const categories: Category[] = [
       
       { id: 'yt1', title: 'Utec YT Short Video', description: '', source: 'youtube', videoUrl: 'sfHTCvVoD7M' },
       { id: 'yt2', title: 'Utec Long Video', description: '', source: 'youtube', videoUrl: '5OhMb6mWuns' },
-      { id: 'yt3', title: 'Visit Health YT Short', description: '', source: 'youtube', videoUrl: 'https://youtube.com/shorts/qscKi-ymS5A?si=_E4esV3dJpybO16e' },
+      { id: 'yt3', title: 'Visit Health YT Short', description: '', source: 'youtube', videoUrl: 'qscKi-ymS5A' },
     ],
   },
   {
